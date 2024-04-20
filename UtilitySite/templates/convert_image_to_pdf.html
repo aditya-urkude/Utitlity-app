@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+{% load static %}
+
+{% if error == "no" %}
+     <script>
+	   alert('Successfull');
+     </script>
+{% endif %}
+
+{% if error == "yes" %}
+     <script>
+	    alert('Something went wrong, Try Again');
+     </script>
+{% endif %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Image to PDF</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Convert Image to PDF</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="image_file" accept="image/*" required>
+            <button type="submit">Convert</button>
+        </form>
+    </div>
+</body>
+</html>
