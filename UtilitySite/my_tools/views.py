@@ -7,6 +7,9 @@ import json
 import random
 import string
 import os
+from django.shortcuts import render
+from django.conf import settings
+
 
 def home(request):
     error = ""
@@ -80,52 +83,59 @@ def generate_random_filename(length=7):
     letters_and_digits = string.ascii_letters + string.digits
     return ''.join(random.choice(letters_and_digits) for _ in range(length))
 
+
 def pdf_merger(request):
     error = ""
     if request.method == 'POST':
-        pdf1 = request.FILES['pdf1']
-        pdf2 = request.FILES['pdf2']
+        pdf1_temp = request.FILES['pdf1']
+        pdf2_temp = request.FILES['pdf2']
+        
+        # Save the uploaded PDF files in the media directory
+        pdf1_path = os.path.join(settings.MEDIA_ROOT, pdf1_temp.name)
+        pdf2_path = os.path.join(settings.MEDIA_ROOT, pdf2_temp.name)
+        
+        with open(pdf1_path, 'wb') as destination:
+            for chunk in pdf1_temp.chunks():
+                destination.write(chunk)
+        with open(pdf2_path, 'wb') as destination:
+            for chunk in pdf2_temp.chunks():
+                destination.write(chunk)
+                
         instructions = {
-        'parts': [
-            {
-            'file': 'first_half'
-            },
-            {
-            'file': 'second_half'
-            }
-        ]
+            'parts': [
+                {'file': 'first_half'},
+                {'file': 'second_half'}
+            ]
         }
 
-        response = requests.request(
-        'POST',
-        'https://api.pspdfkit.com/build',
-        headers = {
-            'Authorization': 'Bearer pdf_live_eZFObhRnaQa4cufDtiSxpfLKAcAIsjYQqQeF3nipnn8'
-        },
-        files = {
-            'first_half': open(pdf1, 'rb'),
-            'second_half': open(pdf2, 'rb')
-        },
-        data = {
-            'instructions': json.dumps(instructions)
-        },
-        stream = True
+        response = requests.post(
+            'https://api.pspdfkit.com/build',
+            headers={
+                'Authorization': 'Bearer pdf_live_eZFObhRnaQa4cufDtiSxpfLKAcAIsjYQqQeF3nipnn8'
+            },
+            files={
+                'first_half': open(pdf1_path, 'rb'),
+                'second_half': open(pdf2_path, 'rb')
+            },
+            data={
+                'instructions': json.dumps(instructions)
+            },
+            stream=True
         )
-        # num_files = 5
-        # file_extension = ".pdf"  # Change this to the desired file extension
-        # for i in range(num_files):
-        #     filename = generate_random_filename() + file_extension
-        #     print(filename)
+        
         try:
             error = "no"
             if response.ok:
                 # Save the resulting PDF file in the media directory
-                with open(os.path.join('media/', 'result2.pdf'), 'wb') as fd:
+                result_pdf_path = os.path.join(settings.MEDIA_ROOT, 'result2.pdf')
+                with open(result_pdf_path, 'wb') as fd:
                     for chunk in response.iter_content(chunk_size=8096):
                         fd.write(chunk)
             else:
                 print(response.text)
                 exit()
-        except:
-            error = "yes"  
+        except Exception as e:
+            error = "yes"
+            print(str(e))
+    
     return render(request, "pdf_merger.html", locals())

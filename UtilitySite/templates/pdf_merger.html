@@ -52,7 +52,8 @@
 <body>
 <div class="container">
     <h2>Upload PDF Files</h2>
-    <form id="pdfForm" enctype="multipart/form-data">
+    <form id="pdfForm" enctype="multipart/form-data" method = "post">
+        {% csrf_token %}
         <input type="file" name="pdf1" accept=".pdf" required>
         <input type="file" name="pdf2" accept=".pdf" required>
         <button type="submit" class="btn">Upload</button>
